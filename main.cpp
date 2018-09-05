@@ -2,6 +2,10 @@
 #include <windows.h>
 #include <string.h>
 #include <io.h>
+#include <stack>
+#include <vector>
+#include <tchar.h>
+
 using namespace std;
 
 void welcome () {
@@ -28,18 +32,42 @@ void setDir (char* path) {
     SetCurrentDirectory(TEXT(path));
 }
 
+bool createNewProcess (char * process) {
+    cout << process << endl;
+    PROCESS_INFORMATION pi;	//进程信息
+    STARTUPINFO si;			//进程启动信息
+    memset(&si, 0, sizeof(si));
+    si.cb = SW_SHOW;
+    si.wShowWindow = SW_SHOW;
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    int res = CreateProcess(_T(process), NULL, NULL, NULL, NULL, NULL, NULL, NULL, &si, &pi);
+    if (!res) {
+        cout << GetLastError();
+    }
+    return true;
+}
+
 void parseCommender(char* commender) {
-    cout << commender << endl;
+    vector<char *> commenderToken;
     char * splitedArray;
     splitedArray = strtok(commender, " ");
     while (splitedArray != NULL) {
-        cout << splitedArray << " " << endl;
+        commenderToken.push_back(splitedArray);
+        splitedArray = strtok(NULL, " ");
+    }
+    if (strcmp(commenderToken[0], "cd") == 0) {
+        int tokenLength = strlen(commenderToken[1]);
+        commenderToken[1][tokenLength - 1] = 0;
+        setDir(commenderToken[1]);
+    } else {
+        commenderToken[0][strlen(commenderToken[0]) - 1] = 0;
+        createNewProcess(commenderToken[0]);
     }
 }
 
 int main() {
-
     welcome();
+
     //main loop
     while (true) {
         getUserName();
@@ -48,6 +76,5 @@ int main() {
         fgets(buffer, 256, stdin);
         parseCommender(buffer);
     }
-
     return 0;
 }
